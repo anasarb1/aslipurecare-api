@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# AslipureCare API — docker-compose for local development / testing
+# ---------------------------------------------------------------------------
+# Usage:
+#   docker compose up --build        # build image and start container
+#   docker compose up -d             # run in background
+#   docker compose down              # stop and remove containers
+# ---------------------------------------------------------------------------
+
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aslipurecare-api
+    ports:
+      # Map host port 5000 → container port 5000.
+      # Change the left side if 5000 is already in use locally.
+      - "5000:5000"
+    environment:
+      # Override any env-based config here (e.g. FLASK_ENV, DB_URL).
+      - FLASK_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
