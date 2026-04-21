@@ -11,6 +11,9 @@ from functools import wraps
 
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import (
+    JWTManager, create_access_token, jwt_required, get_jwt_identity
+)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -23,15 +26,17 @@ logging.basicConfig(
 logger = logging.getLogger("aslipurecare")
 
 # ---------------------------------------------------------------------------
-# App + DB setup
+# App + DB + JWT setup
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "sqlite:///products.db"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret-key-change-in-prod!!")
 
-db = SQLAlchemy(app)
+db  = SQLAlchemy(app)
+jwt = JWTManager(app)
 
 # ---------------------------------------------------------------------------
 # CORS
@@ -65,27 +70,12 @@ class Product(db.Model):
         }
 
 # ---------------------------------------------------------------------------
-# Seed data helper
+# Seed data
 # ---------------------------------------------------------------------------
 SEED_PRODUCTS = [
-    {
-        "id": "1",
-        "name": "Hydrating Vitamin C Serum",
-        "price": 29.99,
-        "description": "Brightening serum with 15% vitamin C, hyaluronic acid, and niacinamide.",
-    },
-    {
-        "id": "2",
-        "name": "Gentle Foaming Cleanser",
-        "price": 14.99,
-        "description": "Sulfate-free daily cleanser suitable for all skin types, pH-balanced formula.",
-    },
-    {
-        "id": "3",
-        "name": "SPF 50 Lightweight Moisturiser",
-        "price": 34.99,
-        "description": "Broad-spectrum UVA/UVB protection in a non-greasy, fast-absorbing moisturiser.",
-    },
+    {"id": "1", "name": "Hydrating Vitamin C Serum",    "price": 29.99, "description": "Brightening serum with 15% vitamin C, hyaluronic acid, and niacinamide."},
+    {"id": "2", "name": "Gentle Foaming Cleanser",      "price": 14.99, "description": "Sulfate-free daily cleanser suitable for all skin types, pH-balanced formula."},
+    {"id": "3", "name": "SPF 50 Lightweight Moisturiser","price": 34.99, "description": "Broad-spectrum UVA/UVB protection in a non-greasy, fast-absorbing moisturiser."},
 ]
 
 def seed_db():
@@ -102,18 +92,43 @@ def log_request(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         timestamp = datetime.now(timezone.utc).isoformat()
-        logger.info(
-            "REQUEST  | %s | %s %s | ip=%s",
-            timestamp, request.method, request.path, request.remote_addr,
-        )
+        logger.info("REQUEST  | %s | %s %s | ip=%s", timestamp, request.method, request.path, request.remote_addr)
         response = func(*args, **kwargs)
         status = response[1] if isinstance(response, tuple) else 200
-        logger.info(
-            "RESPONSE | %s | %s %s | status=%s",
-            timestamp, request.method, request.path, status,
-        )
+        logger.info("RESPONSE | %s | %s %s | status=%s", timestamp, request.method, request.path, status)
         return response
     return wrapper
+
+# ---------------------------------------------------------------------------
+# Auth route  — POST /auth/token
+# ---------------------------------------------------------------------------
+# Hard-coded admin credential (env-overridable). For a student project this
+# is fine; a real service would hash passwords and store them in the DB.
+ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
+ADMIN_PASS = os.environ.get("ADMIN_PASS", "aslipure2024")
+
+@app.route("/auth/token", methods=["POST"])
+@log_request
+def get_token():
+    """
+    Issue a JWT access token.
+
+    Body: { "username": "admin", "password": "aslipure2024" }
+    Returns: { "access_token": "<jwt>" }
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    if username != ADMIN_USER or password != ADMIN_PASS:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = create_access_token(identity=username)
+    logger.info("Token issued for user=%s", username)
+    return jsonify({"access_token": token}), 200
 
 # ---------------------------------------------------------------------------
 # Routes
@@ -138,8 +153,13 @@ def get_products():
 
 
 @app.route("/products", methods=["POST"])
+@jwt_required()
 @log_request
 def create_product():
+    """
+    Create a new product. Requires a valid JWT in the Authorization header.
+    Header: Authorization: Bearer <token>
+    """
     data = request.get_json(silent=True)
 
     if not data:
@@ -159,7 +179,7 @@ def create_product():
     )
     db.session.add(product)
     db.session.commit()
-    logger.info("Created product id=%s name=%s", product.id, product.name)
+    logger.info("Created product id=%s name=%s by user=%s", product.id, product.name, get_jwt_identity())
     return jsonify(product.to_dict()), 201
 
 # ---------------------------------------------------------------------------
