@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — AslipureCare</title>
+  <meta name="description" content="Browse AslipureCare's full range of premium skincare products — serums, cleansers, moisturisers and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">Aslipure<span>Care</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cta"><a href="products.html" class="btn btn-primary">Shop Now</a></li>
+      </ul>
+      <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HERO ── -->
+  <div class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <span>Shop</span>
+      </nav>
+      <h1>The Full Range</h1>
+      <p>Every product formulated for real results. Dermatologist-tested, fragrance-free, and made for all skin types.</p>
+    </div>
+  </div>
+
+  <!-- ── PRODUCTS ── -->
+  <section class="products-page">
+    <div class="container">
+      <div class="products-toolbar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="Treatment">Serums</button>
+          <button class="filter-tab" data-filter="Cleanse">Cleansers</button>
+          <button class="filter-tab" data-filter="Hydrate">Moisturisers</button>
+          <button class="filter-tab" data-filter="Protect">SPF</button>
+        </div>
+        <span class="product-count" id="product-count">Loading…</span>
+      </div>
+      <div class="products-grid" id="all-products-grid">
+        <!-- Populated by JS from API -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MARQUEE ── -->
+  <div class="marquee-strip" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Free UK Delivery over £40</span><span class="dot">·</span>
+      <span>Dermatologist Tested</span><span class="dot">·</span>
+      <span>Cruelty-Free & Vegan</span><span class="dot">·</span>
+      <span>30-Day Glow Guarantee</span><span class="dot">·</span>
+      <span>Free UK Delivery over £40</span><span class="dot">·</span>
+      <span>Dermatologist Tested</span><span class="dot">·</span>
+      <span>Cruelty-Free & Vegan</span><span class="dot">·</span>
+      <span>30-Day Glow Guarantee</span><span class="dot">·</span>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">Aslipure<span style="color:var(--rose)">Care</span></a>
+          <p>Premium skincare rooted in science, designed for every skin type.</p>
+          <div class="footer-socials">
+            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+            <a href="#" class="social-link" aria-label="TikTok">🎵</a>
+            <a href="#" class="social-link" aria-label="Pinterest">📌</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="products.html">All Products</a></li>
+            <li><a href="products.html">Serums</a></li>
+            <li><a href="products.html">Cleansers</a></li>
+            <li><a href="products.html">Moisturisers</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="about.html">Sustainability</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Help</h4>
+          <ul>
+            <li><a href="#">Shipping & Returns</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 AslipureCare. All rights reserved.</span>
+        <span>Made with 🌸 in London</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Filter tabs — client-side filter on rendered cards
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const filter = tab.dataset.filter;
+        document.querySelectorAll('#all-products-grid .product-card').forEach(card => {
+          const badge = card.querySelector('.product-badge-tag')?.textContent ?? '';
+          card.style.display = (filter === 'all' || badge === filter) ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

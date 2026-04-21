@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact — AslipureCare</title>
+  <meta name="description" content="Get in touch with AslipureCare. Questions about products, orders, or partnerships — we'd love to hear from you." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">Aslipure<span>Care</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="products.html">Shop</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cta"><a href="products.html" class="btn btn-primary">Shop Now</a></li>
+      </ul>
+      <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HERO ── -->
+  <div class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <span>Contact</span>
+      </nav>
+      <h1>Get in touch</h1>
+      <p>Have a question about a product, an order, or a partnership? We typically reply within one business day.</p>
+    </div>
+  </div>
+
+  <!-- ── CONTACT ── -->
+  <section>
+    <div class="container">
+      <div class="contact-grid">
+
+        <!-- Left: info -->
+        <div class="contact-info">
+          <p class="section-label">Contact Details</p>
+          <h2 class="section-title">We'd love to hear from you</h2>
+          <p class="section-subtitle">Whether you have a question about a specific product, need help building a routine, or want to explore a wholesale partnership — reach out.</p>
+
+          <div class="contact-details">
+            <div class="contact-item">
+              <div class="contact-icon">✉️</div>
+              <div class="contact-item-text">
+                <div class="label">Email</div>
+                <p>hello@aslipurecare.com</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">📍</div>
+              <div class="contact-item-text">
+                <div class="label">Location</div>
+                <p>Shoreditch, London, E1</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">🕐</div>
+              <div class="contact-item-text">
+                <div class="label">Response Time</div>
+                <p>Within 1 business day</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">🤝</div>
+              <div class="contact-item-text">
+                <div class="label">Partnerships</div>
+                <p>partners@aslipurecare.com</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ teasers -->
+          <div style="margin-top: 3rem;">
+            <p class="section-label">Common Questions</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+              <details style="border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer;">
+                <summary style="font-weight: 500; font-size: 0.95rem; list-style: none; display: flex; justify-content: space-between;">
+                  Do you offer free shipping? <span>+</span>
+                </summary>
+                <p style="margin-top: 0.75rem; font-size: 0.88rem;">Yes — free standard UK delivery on all orders over £40. Express and international options also available at checkout.</p>
+              </details>
+              <details style="border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer;">
+                <summary style="font-weight: 500; font-size: 0.95rem; list-style: none; display: flex; justify-content: space-between;">
+                  Are your products safe for sensitive skin? <span>+</span>
+                </summary>
+                <p style="margin-top: 0.75rem; font-size: 0.88rem;">All products are fragrance-free, hypoallergenic, and dermatologist-tested specifically for sensitive skin. We recommend doing a patch test first.</p>
+              </details>
+              <details style="border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer;">
+                <summary style="font-weight: 500; font-size: 0.95rem; list-style: none; display: flex; justify-content: space-between;">
+                  What is your returns policy? <span>+</span>
+                </summary>
+                <p style="margin-top: 0.75rem; font-size: 0.88rem;">We offer a 30-day Glow Guarantee. If you're not satisfied, return it for a full refund — no questions asked.</p>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: form -->
+        <div>
+          <div class="contact-form">
+            <form id="contact-form" novalidate>
+              <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Send us a message</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="first-name">First Name</label>
+                  <input type="text" id="first-name" name="first_name" placeholder="Aisha" required />
+                </div>
+                <div class="form-group">
+                  <label for="last-name">Last Name</label>
+                  <input type="text" id="last-name" name="last_name" placeholder="Patel" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="hello@example.com" required />
+              </div>
+              <div class="form-group">
+                <label for="subject">Subject</label>
+                <select id="subject" name="subject">
+                  <option value="">Select a topic…</option>
+                  <option value="product">Product Question</option>
+                  <option value="order">Order / Delivery</option>
+                  <option value="routine">Skincare Routine Advice</option>
+                  <option value="partnership">Partnership / Wholesale</option>
+                  <option value="press">Press Enquiry</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" placeholder="Tell us how we can help…" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 1rem;">
+                Send Message
+              </button>
+            </form>
+
+            <div class="form-success" id="form-success">
+              <div class="success-icon">🌸</div>
+              <h3>Message received!</h3>
+              <p>Thanks for reaching out. We'll get back to you within one business day.</p>
+              <a href="index.html" class="btn btn-outline" style="margin-top: 1.5rem;">Back to home</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">Aslipure<span style="color:var(--rose)">Care</span></a>
+          <p>Premium skincare rooted in science, designed for every skin type.</p>
+          <div class="footer-socials">
+            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+            <a href="#" class="social-link" aria-label="TikTok">🎵</a>
+            <a href="#" class="social-link" aria-label="Pinterest">📌</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="products.html">All Products</a></li>
+            <li><a href="products.html">Serums</a></li>
+            <li><a href="products.html">Cleansers</a></li>
+            <li><a href="products.html">Moisturisers</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="about.html">Sustainability</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Help</h4>
+          <ul>
+            <li><a href="#">Shipping & Returns</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 AslipureCare. All rights reserved.</span>
+        <span>Made with 🌸 in London</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
