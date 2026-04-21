@@ -5,6 +5,7 @@ A microservice for managing skincare products.
 
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from functools import wraps
@@ -26,12 +27,10 @@ logging.basicConfig(
 logger = logging.getLogger("aslipurecare")
 
 # ---------------------------------------------------------------------------
-# App + DB + JWT setup
+# App + DB + JWT
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "sqlite:///products.db"
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///products.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret-key-change-in-prod!!")
 
@@ -73,8 +72,8 @@ class Product(db.Model):
 # Seed data
 # ---------------------------------------------------------------------------
 SEED_PRODUCTS = [
-    {"id": "1", "name": "Hydrating Vitamin C Serum",    "price": 29.99, "description": "Brightening serum with 15% vitamin C, hyaluronic acid, and niacinamide."},
-    {"id": "2", "name": "Gentle Foaming Cleanser",      "price": 14.99, "description": "Sulfate-free daily cleanser suitable for all skin types, pH-balanced formula."},
+    {"id": "1", "name": "Hydrating Vitamin C Serum",     "price": 29.99, "description": "Brightening serum with 15% vitamin C, hyaluronic acid, and niacinamide."},
+    {"id": "2", "name": "Gentle Foaming Cleanser",       "price": 14.99, "description": "Sulfate-free daily cleanser suitable for all skin types, pH-balanced formula."},
     {"id": "3", "name": "SPF 50 Lightweight Moisturiser","price": 34.99, "description": "Broad-spectrum UVA/UVB protection in a non-greasy, fast-absorbing moisturiser."},
 ]
 
@@ -84,6 +83,42 @@ def seed_db():
             db.session.add(Product(**p))
         db.session.commit()
         logger.info("Database seeded with %d products", len(SEED_PRODUCTS))
+
+# ---------------------------------------------------------------------------
+# Validation helpers
+# ---------------------------------------------------------------------------
+MAX_NAME_LEN = 200
+MAX_DESC_LEN = 2000
+MAX_PRICE    = 10_000
+
+def validate_product_payload(data):
+    """Validate product creation payload. Returns list of error strings."""
+    errors = []
+    if not data:
+        return ["Request body must be valid JSON"]
+    for field in ("name", "price", "description"):
+        if field not in data:
+            errors.append(f"'{field}' is required")
+    if errors:
+        return errors
+    name = data.get("name", "")
+    if not isinstance(name, str) or not name.strip():
+        errors.append("'name' must be a non-empty string")
+    elif len(name.strip()) > MAX_NAME_LEN:
+        errors.append(f"'name' must be {MAX_NAME_LEN} characters or fewer")
+    price = data.get("price")
+    if not isinstance(price, (int, float)) or isinstance(price, bool):
+        errors.append("'price' must be a number")
+    elif price <= 0:
+        errors.append("'price' must be greater than zero")
+    elif price > MAX_PRICE:
+        errors.append(f"'price' must be {MAX_PRICE} or less")
+    desc = data.get("description", "")
+    if not isinstance(desc, str) or not desc.strip():
+        errors.append("'description' must be a non-empty string")
+    elif len(desc.strip()) > MAX_DESC_LEN:
+        errors.append(f"'description' must be {MAX_DESC_LEN} characters or fewer")
+    return errors
 
 # ---------------------------------------------------------------------------
 # Request logging decorator
@@ -100,32 +135,39 @@ def log_request(func):
     return wrapper
 
 # ---------------------------------------------------------------------------
-# Auth route  — POST /auth/token
+# JWT error handlers (JSON responses instead of Flask default HTML)
 # ---------------------------------------------------------------------------
-# Hard-coded admin credential (env-overridable). For a student project this
-# is fine; a real service would hash passwords and store them in the DB.
+@jwt.unauthorized_loader
+def missing_token_callback(reason):
+    return jsonify({"error": "Authorization token required", "detail": reason}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(reason):
+    return jsonify({"error": "Invalid token", "detail": reason}), 422
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({"error": "Token has expired"}), 401
+
+# ---------------------------------------------------------------------------
+# Auth route
+# ---------------------------------------------------------------------------
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "aslipure2024")
 
 @app.route("/auth/token", methods=["POST"])
 @log_request
 def get_token():
-    """
-    Issue a JWT access token.
-
-    Body: { "username": "admin", "password": "aslipure2024" }
-    Returns: { "access_token": "<jwt>" }
-    """
+    """Issue a JWT. Body: { "username": "admin", "password": "aslipure2024" }"""
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Request body must be valid JSON"}), 400
-
-    username = data.get("username", "")
-    password = data.get("password", "")
-
+    username = data.get("username") if isinstance(data.get("username"), str) else ""
+    password = data.get("password") if isinstance(data.get("password"), str) else ""
+    if not username or not password:
+        return jsonify({"error": "'username' and 'password' are required"}), 400
     if username != ADMIN_USER or password != ADMIN_PASS:
         return jsonify({"error": "Invalid credentials"}), 401
-
     token = create_access_token(identity=username)
     logger.info("Token issued for user=%s", username)
     return jsonify({"access_token": token}), 200
@@ -148,43 +190,62 @@ def health():
 @app.route("/products", methods=["GET"])
 @log_request
 def get_products():
-    products = Product.query.all()
-    return jsonify([p.to_dict() for p in products])
+    """Return all products. Accepts optional ?limit=N query param."""
+    try:
+        limit = request.args.get("limit")
+        if limit is not None:
+            if not limit.isdigit() or int(limit) < 1:
+                return jsonify({"error": "'limit' must be a positive integer"}), 400
+            products = Product.query.limit(int(limit)).all()
+        else:
+            products = Product.query.all()
+        return jsonify([p.to_dict() for p in products])
+    except Exception as exc:
+        logger.exception("Error fetching products: %s", exc)
+        return jsonify({"error": "Could not retrieve products"}), 500
+
+
+@app.route("/products/<product_id>", methods=["GET"])
+@log_request
+def get_product(product_id):
+    """Return a single product by ID."""
+    product = db.session.get(Product, product_id)
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+    return jsonify(product.to_dict())
 
 
 @app.route("/products", methods=["POST"])
 @jwt_required()
 @log_request
 def create_product():
-    """
-    Create a new product. Requires a valid JWT in the Authorization header.
-    Header: Authorization: Bearer <token>
-    """
+    """Create a product. Requires Authorization: Bearer <token>."""
     data = request.get_json(silent=True)
-
-    if not data:
-        return jsonify({"error": "Request body must be valid JSON"}), 400
-
-    missing = [f for f in ("name", "price", "description") if f not in data]
-    if missing:
-        return jsonify({"error": f"Missing required fields: {missing}"}), 400
-
-    if not isinstance(data["price"], (int, float)) or data["price"] <= 0:
-        return jsonify({"error": "'price' must be a positive number"}), 400
-
+    errors = validate_product_payload(data)
+    if errors:
+        return jsonify({"error": "Validation failed", "details": errors}), 400
     product = Product(
         name        = str(data["name"]).strip(),
         price       = round(float(data["price"]), 2),
         description = str(data["description"]).strip(),
     )
-    db.session.add(product)
-    db.session.commit()
-    logger.info("Created product id=%s name=%s by user=%s", product.id, product.name, get_jwt_identity())
+    try:
+        db.session.add(product)
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.exception("DB error creating product: %s", exc)
+        return jsonify({"error": "Could not save product"}), 500
+    logger.info("Created product id=%s name=%s by=%s", product.id, product.name, get_jwt_identity())
     return jsonify(product.to_dict()), 201
 
 # ---------------------------------------------------------------------------
 # Error handlers
 # ---------------------------------------------------------------------------
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({"error": "Bad request"}), 400
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({"error": "Resource not found"}), 404
