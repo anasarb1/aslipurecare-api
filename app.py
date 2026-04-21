@@ -38,6 +38,12 @@ db  = SQLAlchemy(app)
 jwt = JWTManager(app)
 
 # ---------------------------------------------------------------------------
+# Metrics state  (in-process counters; reset on restart)
+# ---------------------------------------------------------------------------
+_START_TIME = time.time()
+_request_counts: dict[str, int] = {}   # key: "METHOD /path"
+
+# ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
 @app.after_request
@@ -121,11 +127,14 @@ def validate_product_payload(data):
     return errors
 
 # ---------------------------------------------------------------------------
-# Request logging decorator
+# Request logging + metrics decorator
 # ---------------------------------------------------------------------------
 def log_request(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        key = f"{request.method} {request.path}"
+        _request_counts[key] = _request_counts.get(key, 0) + 1
+
         timestamp = datetime.now(timezone.utc).isoformat()
         logger.info("REQUEST  | %s | %s %s | ip=%s", timestamp, request.method, request.path, request.remote_addr)
         response = func(*args, **kwargs)
@@ -135,7 +144,7 @@ def log_request(func):
     return wrapper
 
 # ---------------------------------------------------------------------------
-# JWT error handlers (JSON responses instead of Flask default HTML)
+# JWT error handlers
 # ---------------------------------------------------------------------------
 @jwt.unauthorized_loader
 def missing_token_callback(reason):
@@ -185,6 +194,39 @@ def index():
 @log_request
 def health():
     return jsonify({"status": "healthy", "service": "aslipurecare-api", "version": "2.0.0"})
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    """
+    Operational metrics endpoint.
+
+    Returns:
+        uptime_seconds  - seconds since the process started
+        total_requests  - total requests handled across all routes
+        requests_by_route - per-route breakdown
+        product_count   - number of products currently in the database
+        service         - service name
+        version         - API version
+        timestamp       - current UTC time
+    """
+    uptime = round(time.time() - _START_TIME, 2)
+    total  = sum(_request_counts.values())
+
+    try:
+        product_count = Product.query.count()
+    except Exception:
+        product_count = None
+
+    return jsonify({
+        "service":           "aslipurecare-api",
+        "version":           "2.0.0",
+        "timestamp":         datetime.now(timezone.utc).isoformat(),
+        "uptime_seconds":    uptime,
+        "total_requests":    total,
+        "requests_by_route": dict(sorted(_request_counts.items())),
+        "product_count":     product_count,
+    })
 
 
 @app.route("/products", methods=["GET"])
