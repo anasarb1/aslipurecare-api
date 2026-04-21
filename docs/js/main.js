@@ -2,7 +2,7 @@
    AslipureCare — Main JavaScript
    ============================================================ */
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'https://aslipurecare-api-1.onrender.com';
 
 /* ── Emoji map for product names ─────────────────────────── */
 function productEmoji(name = '') {
