@@ -108,7 +108,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false        # set to true (and add login step) to push
+          push: false
+          load: true         # export image to local Docker daemon
           tags: ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
