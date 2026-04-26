@@ -16,12 +16,16 @@ services:
       dockerfile: Dockerfile
     container_name: aslipurecare-api
     ports:
-      # Map host port 5000 → container port 5000.
-      # Change the left side if 5000 is already in use locally.
       - "5000:5000"
     environment:
-      # Override any env-based config here (e.g. FLASK_ENV, DB_URL).
       - FLASK_ENV=production
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-key-change-in-prod!!}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-aslipure2024}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///products.db}
+    volumes:
+      # Persist the SQLite database across container restarts
+      - db_data:/app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c",
@@ -30,3 +34,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+volumes:
+  db_data:
