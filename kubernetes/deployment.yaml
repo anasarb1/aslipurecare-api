@@ -1,0 +1,91 @@
+# ---------------------------------------------------------------------------
+# AslipureCare API — Kubernetes Deployment
+# ---------------------------------------------------------------------------
+# A Deployment manages a set of identical pods and ensures the desired number
+# are always running. If a pod crashes, Kubernetes automatically replaces it.
+#
+# Usage:
+#   kubectl apply -f kubernetes/deployment.yaml
+#   kubectl get deployments
+#   kubectl rollout status deployment/aslipurecare-api
+# ---------------------------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aslipurecare-api
+  labels:
+    app: aslipurecare-api
+
+spec:
+  # Run 2 pod replicas so the service stays available if one pod restarts
+  replicas: 2
+
+  # The deployment manages pods whose labels match this selector
+  selector:
+    matchLabels:
+      app: aslipurecare-api
+
+  template:
+    metadata:
+      labels:
+        app: aslipurecare-api
+
+    spec:
+      containers:
+        - name: aslipurecare-api
+          # Replace with your actual image, e.g. dockerhub-user/aslipurecare-api:latest
+          image: aslipurecare-api:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5000
+
+          # Environment variables — use a Secret for JWT_SECRET_KEY and ADMIN_PASS
+          # in a real cluster rather than plain text values here.
+          env:
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aslipurecare-secrets
+                  key: jwt-secret-key
+                  optional: true   # falls back to in-code default if secret absent
+            - name: ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: aslipurecare-secrets
+                  key: admin-pass
+                  optional: true
+            - name: DATABASE_URL
+              value: "sqlite:///products.db"
+
+          # Resource limits prevent a single pod from starving the node
+          resources:
+            requests:
+              cpu: "100m"       # 0.1 CPU cores guaranteed
+              memory: "128Mi"   # 128 MB RAM guaranteed
+            limits:
+              cpu: "250m"       # 0.25 CPU cores maximum
+              memory: "256Mi"   # 256 MB RAM maximum
+
+          # Liveness probe: Kubernetes restarts the pod if /health stops responding.
+          # Checked every 15 seconds; 3 consecutive failures trigger a restart.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10   # wait for app to start before first check
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          # Readiness probe: pod only receives traffic once /health returns 200.
+          # Prevents requests being routed to a pod that is still starting up.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5

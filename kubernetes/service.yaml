@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# AslipureCare API — Kubernetes Service (LoadBalancer)
+# ---------------------------------------------------------------------------
+# A Service gives the deployment a stable network endpoint. Pods come and go
+# (restarts, scaling) but the Service IP/DNS stays constant.
+#
+# Type: LoadBalancer — tells the cloud provider (AWS, GCP, Azure) to provision
+# an external load balancer and assign a public IP. On a local cluster (e.g.
+# minikube) use `minikube tunnel` to access the external IP.
+#
+# Usage:
+#   kubectl apply -f kubernetes/service.yaml
+#   kubectl get service aslipurecare-api-service
+#   # Once EXTERNAL-IP is assigned:
+#   curl http://<EXTERNAL-IP>:5000/health
+# ---------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: aslipurecare-api-service
+  labels:
+    app: aslipurecare-api
+
+spec:
+  # LoadBalancer exposes the service externally via a cloud provider load balancer.
+  # Change to ClusterIP if you only need internal cluster access,
+  # or NodePort for bare-metal / local clusters without a cloud provider.
+  type: LoadBalancer
+
+  # Route traffic to pods with this label (must match the Deployment's pod labels)
+  selector:
+    app: aslipurecare-api
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000        # port exposed externally on the load balancer
+      targetPort: 5000  # port the container is listening on
